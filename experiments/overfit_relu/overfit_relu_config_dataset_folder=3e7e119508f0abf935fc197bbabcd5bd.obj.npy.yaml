@@ -1,0 +1,91 @@
+type: overfit
+trainer: stage_inr
+load_path: ./ckpts/hongli/relu/epoch8500_model.pt
+result_path: ./ckpts/relu_results
+dataset:
+  type: shapenet
+  clipping_treshold: 0.1
+  supervision: sdf
+  folder: ./data/sdf/171shape_occ_sdf/train/3e7e119508f0abf935fc197bbabcd5bd.obj.npy
+  transforms:
+    type: shapenet
+arch:
+  type: meta_low_rank_modulated_inr
+  ema: null
+  rank:
+  - 128
+  modulated_layer_idxs:
+  - 1
+  use_factorization: false
+  n_inner_step: 4
+  inner_lr: 0.003
+  coord_sampler:
+    data_type: image
+    coord_range:
+    - -1.0
+    - 1.0
+    train_strategy: null
+    val_strategy: null
+  hyponet:
+    share_bias: false
+    type: mlp
+    n_layer: 6
+    hidden_dim:
+    - 256
+    use_bias: true
+    input_dim: 3
+    output_dim: 2
+    output_bias: 0
+    fourier_mapping:
+      type: PE
+      trainable: false
+      use_ff: true
+      ff_sigma: 4
+      ff_dim: 27
+    activation:
+      type: relu
+      siren_w0: null
+    initialization:
+      weight_init_type: kaiming_uniform
+      bias_init_type: zero
+    normalize_weight: true
+loss:
+  type: mse
+  subsample:
+    type: null
+    ratio: 0.1
+  coord_noise: null
+  use_KL_regularization: false
+optimizer:
+  type: overfit
+  init_lr: 0.0001
+  weight_decay: 0.0001
+  use_patience: true
+  patience_treshold: 0.0001
+  grad_accm_steps: 1
+  betas:
+  - 0.9
+  - 0.95
+  warmup:
+    epoch: 0
+    multiplier: 1
+    buffer_epoch: 0
+    min_lr: 0.001
+    mode: adaptive
+    step_size: 750
+    gamma: 0.5
+    patience: 30
+    patience_adaptive: 30
+    factor: 0.5
+    threshold: 0
+    start_from_zero: true
+  max_gn: null
+experiment:
+  amp: true
+  batch_size: 1
+  total_batch_size: 1
+  epochs: 10000
+  epochs_cos: 30
+  save_ckpt_freq: 500
+  test_freq: 1
+  test_imlog_freq: 500

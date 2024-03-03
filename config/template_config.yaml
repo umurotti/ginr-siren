@@ -1,0 +1,92 @@
+type: {value: overfit, type: string} #generalize/overfit
+trainer: stage_inr
+load_path: {value: ./ckpts/epoch4000_model.pt, type: string}
+result_path: {value: ./ckpts/results, type: string}
+dataset:
+  type: {value: shapenet, type: string}
+  clipping_treshold: {value: 0.1, type: float}
+  supervision: {value: sdf, type: string} #siren_sdf/sdf/occ
+  folder: {value: ./data/sdf/single, type: string}
+  transforms:
+    type: {value: shapenet, type: string}
+
+arch:
+  type: {value: meta_low_rank_modulated_inr, type: string}
+  ema: {value: null, type: null}
+  rank: {value: [128], type: list}
+  modulated_layer_idxs: {value: [1], type: list}
+  use_factorization: {value: false, type: boolean}
+  n_inner_step: {value: 5, type: integer}
+  inner_lr: {value: 0.003, type: float}
+
+  coord_sampler:
+    data_type: {value: image, type: string}
+    coord_range: {value: [-1.0, 1.0], type: list}
+    train_strategy: {value: null, type: null}
+    val_strategy: {value: null, type: null}
+
+  hyponet:
+    share_bias: false
+    type: {value: mlp, type: string}
+    n_layer: {value: 6, type: integer}
+    hidden_dim: {value: [256], type: list}
+    use_bias: {value: true, type: boolean}
+    input_dim: {value: 3, type: integer}
+    output_dim: {value: 2, type: integer}
+    output_bias: {value: 0, type: float}
+
+    fourier_mapping:
+      type: {value: siren, type: string} #Gaussianmx ^
+      trainable: {value: false, type: boolean}
+      use_ff: {value: false, type: boolean} # true
+      ff_sigma: {value: 0, type: integer} # ff_dim = 2*ff_sigma *3 + (3)
+      ff_dim: {value: 3, type: integer}
+
+    activation:
+      type: {value: siren, type: string} #relu
+      siren_w0: {value: 30, type: integer} # 30 / null
+
+    initialization:
+      weight_init_type: {value: siren, type: string} #kaiming_uniform
+      bias_init_type: {value: siren, type: string} #zero
+    normalize_weight: {value: true, type: boolean}
+
+loss:
+  type: {value: mse, type: string} #now unnecessary
+  subsample:
+    type: {value: null, type: null}
+    ratio: {value: 0.1, type: float}
+  coord_noise: {value: null, type: null}
+
+optimizer:
+  type: {value: overfit, type: string}
+  init_lr: {value: 0.0001, type: float}
+  weight_decay: {value: 0.0000, type: float} #1e-4  weight decay help convergence of meta_learning??
+  use_patience: {value: True, type: boolean}
+  patience_treshold: {value: 0.000001, type: float}
+  
+  betas: {value: [0.9, 0.95], type: list}
+  warmup:
+    epoch: {value: 0, type: integer}
+    multiplier: {value: 1, type: integer}
+    buffer_epoch: {value: 0, type: integer}
+    min_lr: {value: 0.001, type: float}
+    mode: {value: adaptive, type: string}
+    step_size: {value: 750, type: integer}
+    gamma: {value: 0.5, type: float}
+    patience: {value: 30, type: integer}
+    patience_adaptive: {value: 30, type: integer}
+    factor: {value: 0.5, type: float}
+    threshold: {value: 0, type: integer}
+    start_from_zero: {value: True, type: boolean}
+  max_gn: {value: null, type: null}
+
+experiment:
+  amp: {value: True, type: boolean}
+  batch_size: {value: 3, type: integer}
+  total_batch_size: {value: 3, type: integer}
+  epochs: {value: 20000, type: integer}
+  epochs_cos: {value: 30, type: integer}
+  save_ckpt_freq: {value: 200, type: integer}
+  test_freq: {value: 200, type: integer}
+  test_imlog_freq: {value: 200, type: integer}

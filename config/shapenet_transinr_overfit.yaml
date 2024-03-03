@@ -1,0 +1,100 @@
+type: overfit
+trainer: stage_inr
+dataset:
+  type: shapenet
+  supervision: siren_sdf  #siren/siren_sdf
+  folder: /home/umaru/PycharmProjects/meta_shaope/data/171shape_resize/train/1c4b8662938adf41da2b0f839aba40f9.obj.npy
+  transforms:
+    type: shapenet
+
+arch: # needs to add encoder, modulation type
+  type: low_rank_modulated_transinr
+  ema: null
+
+  n_weight_groups: [256] # list, assert len(n_weight_groups) in [1, hyponet.n_layer]
+  modulated_layer_idxs: [1]
+
+  coord_sampler:
+    data_type: image
+    coord_range: [-1.0, 1.0]
+    train_strategy: null
+    val_strategy: null
+
+  data_encoder:
+    type: PointNet2
+    n_channel: 3
+    trainable: false
+    encoder_spec:
+      patch_size: 9
+      padding: 1
+
+  latent_mapping: # no longer required
+    type: linear
+    n_patches: 500
+    n_layer: 1 # if n_layer == 1, only Linear
+    activation: relu # activation of mapping network, n_layer>1
+    hidden_dim: [256] # hidden dimension, valid only when n_layer>1
+    latent_dim: 768 #output dimension
+    use_pe: true
+
+  transformer:  # embed_dim =  ff_dim+ pointnet_hidden_dim = 75+285=360
+    n_layer: 6
+    embed_dim: 360
+    block: 
+      n_head: 12
+
+  hyponet:
+    type: mlp
+    n_layer: 5 # including the output layer
+    hidden_dim: [256] # list, assert len(hidden_dim) in [1, n_layers-1]
+    use_bias: true
+    input_dim: 3
+    output_dim: 2
+    output_bias: 0.5
+    fourier_mapping:
+      type: PE
+      trainable: false
+      use_ff: true
+      ff_sigma: 12
+      ff_dim: 75 # ff_sigma*6+3
+    activation:
+      type: relu
+      siren_w0: null
+    initialization:
+      weight_init_type: kaiming_uniform
+      bias_init_type: zero
+
+loss:
+  type: mse #now unnecessary
+  subsample:
+    type: null
+    ratio: 0.1
+  coord_noise: coordwise
+
+optimizer:
+  type: adam
+  init_lr: 0.0001
+  weight_decay: 0.0
+  betas: [0.9, 0.999] #[0.9, 0.95]
+  warmup:
+    epoch: 0
+    multiplier: 1
+    buffer_epoch: 0
+    step_size: 1000
+    min_lr: 0.0001
+    mode: adaptive
+    patience_adaptive: 20000
+    factor: 0.9
+    start_from_zero: True
+    threshold: 0
+  max_gn: null
+
+experiment:
+  amp: True
+  batch_size: 2
+  total_batch_size: 2
+  epochs_cos: 30
+  epochs: 40000
+  save_ckpt_freq: 50000 # large!!
+  test_freq: 5000
+  test_imlog_freq: 50

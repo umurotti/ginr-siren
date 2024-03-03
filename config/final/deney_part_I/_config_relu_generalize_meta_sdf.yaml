@@ -1,0 +1,118 @@
+arch:
+  type: meta_low_rank_modulated_inr
+  ema: null
+  n_inner_step: 4
+  inner_lr: 0.0003
+  hyponet:
+    type: mlp
+    n_layer: 6
+    hidden_dim:
+    - 256
+    use_bias: true
+    share_bias: false
+    input_dim: 3
+    output_dim: 2
+    output_bias: 0.0
+    fourier_mapping:
+      type: PE
+      trainable: false
+      use_ff: true
+      ff_sigma: 4
+      ff_dim: 27
+    activation:
+      type: relu
+      siren_w0: null
+    initialization:
+      weight_init_type: kaiming_uniform
+      bias_init_type: zero
+    normalize_weight: true
+  rank:
+  - 128
+  modulated_layer_idxs:
+  - 1
+  use_factorization: false
+  coord_sampler:
+    data_type: image
+    coord_range:
+    - -1.0
+    - 1.0
+    train_strategy: null
+    val_strategy: null
+dataset:
+  transforms:
+    type: shapenet
+  type: shapenet
+  supervision: sdf
+  folder: ./data/final/full
+  clipping_treshold: 0.1
+optimizer:
+  type: adam
+  max_gn: null
+  warmup:
+    mode: adaptive
+    start_from_zero: true
+    epoch: 0
+    multiplier: 1
+    buffer_epoch: 0
+    min_lr: 0.0001
+    step_size: 1000
+    gamma: 0.8
+    patience: 30
+    patience_adaptive: 6
+    factor: 0.8
+    threshold: 0
+  init_lr: 0.0001
+  weight_decay: 0.0001
+  betas:
+  - 0.9
+  - 0.95
+  grad_accm_steps: 1
+  use_patience: False
+experiment:
+  test_freq: 1
+  amp: true
+  batch_size: 20
+  total_batch_size: 200
+  epochs: 10 #10000
+  epochs_cos: 30
+  save_ckpt_freq: 5 # 500
+  test_imlog_freq: 1 # 500
+loss:
+  type: mse
+  subsample:
+    type: null
+    ratio: 0.1
+  coord_noise: null
+  use_KL_regularization: True
+
+type: generalize
+trainer: stage_inr
+seed: 0
+runtime:
+  args:
+    model_config: /root/g_inr/2023_visionpractical/config/shapenet_meta_sdf.yaml
+    result_path: ./ckpts/final/full/generalize
+    task: tsdf_relu_6share5
+    load_path: ''
+    postfix: ''
+    seed: 0
+    eval: false
+    resume: false
+    world_size: 1
+    local_rank: 0
+    node_rank: 0
+    nnodes: 1
+    nproc_per_node: 1
+    dist_backend: nccl
+    timeout: 1
+    rank: 0
+  extra_config: {}
+  distenv:
+    world_size: 1
+    world_rank: 0
+    local_rank: 0
+    num_gpus: 1
+    master: true
+    device_name: NVIDIA GeForce RTX 3090
+result_path: ./ckpts/final/full/generalize
+load_path: ''

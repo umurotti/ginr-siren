@@ -1,0 +1,93 @@
+type: generalize
+trainer: stage_inr
+dataset:
+  type: shapenet
+  supervision: sdf  #siren/siren_sdf
+  folder: /home/umaru/praktikum/changed_version/2023_visionpractical/data/2wp_test_occ_sdf
+  transforms:
+    type: shapenet
+
+arch: # needs to add encoder, modulation type
+  type: meta_low_rank_modulated_inr
+  ema: null
+  rank: [128] # list, assert len(n_weight_groups) in [1, hyponet.n_layer]
+  modulated_layer_idxs: [0,1,2,3,4,5]
+  use_factorization: false
+  n_inner_step: 4
+  inner_lr: 0.0003
+
+
+  coord_sampler:
+    data_type: image
+    coord_range: [-1.0, 1.0]
+    train_strategy: null
+    val_strategy: null
+
+  hyponet:
+    share_bias: false
+    type: mlp
+    n_layer: 6 # including the output layer
+    hidden_dim: [256] # list, assert len(hidden_dim) in [1, n_layers-1]
+    use_bias: true
+    input_dim: 3
+    output_dim: 2
+    output_bias: 0 #0.5 essential for siren but why
+
+
+    fourier_mapping:
+      type: siren #Gaussian
+      trainable: false
+      use_ff: false # true
+      ff_sigma: 0 # ff_dim = 2*ff_sigma *3 + (3)
+      ff_dim: 3
+
+    activation:
+      type: relu #relu
+      siren_w0: null  # 30 / null
+
+    initialization:
+      weight_init_type: kaiming_uniform #kaiming_uniform
+      bias_init_type: zero #zero
+    normalize_weight: true
+
+
+loss:
+  type: mse #now unnecessary
+  subsample:
+    type: null
+    ratio: 0.1
+  coord_noise: null
+  use_KL_regularization: True
+
+optimizer:
+  type: adam
+  init_lr: 0.0001
+  weight_decay: 0.0001 #1e-4  weight decay help convergence of meta_learning??
+
+  betas: [0.9, 0.95] #[0.9, 0.95]
+  warmup:
+    epoch: 0
+    multiplier: 1
+    buffer_epoch: 0
+    min_lr: 0.0001
+    mode: adaptive
+    step_size: 1000
+    gamma: 0.8
+    patience: 30
+    patience_adaptive: 6
+    factor: 0.8
+    threshold: 0
+    start_from_zero: True
+  max_gn: null
+
+
+experiment:
+  amp: True
+  batch_size: 3
+  total_batch_size: 3
+  epochs: 10000
+  epochs_cos: 30
+  save_ckpt_freq: 2000
+  test_freq: 1
+  test_imlog_freq: 500
+
